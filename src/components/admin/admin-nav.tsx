@@ -33,7 +33,7 @@ export function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="bg-muted/10 min-h-[calc(100vh-4rem)] w-64 border-r p-4">
+    <nav className="bg-muted/10 min-h-[calc(100vh-4rem)] w-64 shrink-0 border-r p-4">
       <ul className="space-y-2">
         {navItems.map(item => {
           const Icon = item.icon

@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
       <AdminHeader />
       <div className="flex">
         <AdminNav />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-6">{children}</main>
       </div>
     </div>
   )
