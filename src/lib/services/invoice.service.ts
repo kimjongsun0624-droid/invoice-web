@@ -434,3 +434,38 @@ export async function searchInvoices(
     throw new Error('견적서 검색에 실패했습니다')
   }
 }
+
+/**
+ * 견적서 조회수 증가
+ * 캐시를 거치지 않고 최신 값을 직접 읽어 +1 후 기록함
+ * (60초 캐시된 값을 기준으로 하면 캐시 윈도우 내 동시 조회가 같은 값에 덮어써 카운트가 누락됨)
+ *
+ * 실패해도 견적서 조회 자체에는 영향을 주지 않도록 에러를 삼키고 경고 로그만 남김.
+ * 동시 조회 시 read-modify-write 경쟁으로 일부 카운트가 누락될 수 있음(원자적 증가 아님).
+ *
+ * @param pageId - 견적서 페이지 ID
+ */
+export async function incrementViewCount(pageId: string): Promise<void> {
+  try {
+    const page = await notion.pages.retrieve({ page_id: pageId })
+
+    if (!('properties' in page) || !isInvoicePage(page)) {
+      return
+    }
+
+    const currentCount = page.properties.조회수?.number ?? 0
+
+    await notion.pages.update({
+      page_id: pageId,
+      properties: {
+        조회수: { number: currentCount + 1 },
+      },
+    })
+  } catch (error) {
+    const errorObj = error as Error
+    logger.warn('견적서 조회수 증가 실패', {
+      pageId,
+      error: errorObj.message,
+    })
+  }
+}

@@ -5,12 +5,17 @@ import { InvoiceTable } from '@/components/invoice/InvoiceTable'
 import { InvoiceSummary } from '@/components/invoice/InvoiceSummary'
 import { PDFDownloadButton } from '@/components/invoice/PDFDownloadButton'
 import { InvoiceSkeleton } from '@/components/invoice/InvoiceSkeleton'
-import { getOptimizedInvoice } from '@/lib/services/invoice.service'
+import {
+  getOptimizedInvoice,
+  incrementViewCount,
+} from '@/lib/services/invoice.service'
 import { notFound } from 'next/navigation'
 import { Separator } from '@/components/ui/separator'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { after } from 'next/server'
 import { formatCurrency } from '@/lib/format'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface InvoicePageProps {
   params: Promise<{
@@ -69,18 +74,25 @@ async function InvoiceContent({ id }: { id: string }) {
     notFound()
   }
 
+  // 조회수 증가는 응답을 막지 않도록 백그라운드로 실행
+  // (generateMetadata는 소셜 크롤러에서도 호출되므로 여기, 실제 본문 렌더링 시에만 카운트)
+  after(() => incrementViewCount(id))
+
   return (
     <div className="flex min-h-screen flex-col">
       <main className="bg-muted/30 flex-1">
         <div className="container mx-auto px-4 py-8 sm:py-12">
           {/* 페이지 타이틀 */}
-          <div className="mx-auto mb-6 max-w-3xl">
-            <h1 className="text-foreground text-3xl font-bold sm:text-4xl">
-              견적서 조회
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              견적서의 상세 내용을 확인하실 수 있습니다.
-            </p>
+          <div className="mx-auto mb-6 flex max-w-3xl items-start justify-between gap-4">
+            <div>
+              <h1 className="text-foreground text-3xl font-bold sm:text-4xl">
+                견적서 조회
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                견적서의 상세 내용을 확인하실 수 있습니다.
+              </p>
+            </div>
+            <ThemeToggle />
           </div>
 
           {/* 견적서 콘텐츠 */}

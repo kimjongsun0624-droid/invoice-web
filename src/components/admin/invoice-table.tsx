@@ -75,6 +75,7 @@ export function InvoiceTable({
               </SortButton>
             </TableHead>
             <TableHead className="w-[100px]">상태</TableHead>
+            <TableHead className="w-[80px] text-right">조회수</TableHead>
             <TableHead className="w-[250px]">링크</TableHead>
             <TableHead className="w-[100px] text-right">작업</TableHead>
           </TableRow>
@@ -97,6 +98,9 @@ export function InvoiceTable({
                 <Badge variant={statusConfig[invoice.status].variant}>
                   {statusConfig[invoice.status].label}
                 </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground text-right">
+                {invoice.viewCount.toLocaleString('ko-KR')}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">

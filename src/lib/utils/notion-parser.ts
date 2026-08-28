@@ -34,6 +34,7 @@ export function transformNotionToInvoice(
   const totalAmount =
     props['총 금액']?.number || calculateTotalFromItems(itemPages)
   const status = mapKoreanStatus(props.상태?.select?.name)
+  const viewCount = props.조회수?.number ?? 0
 
   // 항목 변환
   const items = itemPages.map(transformNotionToItem)
@@ -47,6 +48,7 @@ export function transformNotionToInvoice(
     totalAmount,
     status,
     items,
+    viewCount,
   }
 }
 

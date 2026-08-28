@@ -58,6 +58,11 @@ export interface InvoicePageProperties {
     type: 'relation'
     relation: Array<{ id: string }>
   }
+  /** 조회수 (Number 속성, 선택사항 — Notion DB에 아직 없을 수 있음) */
+  조회수?: {
+    type: 'number'
+    number: number | null
+  }
 }
 
 /**

@@ -47,6 +47,8 @@ export interface Invoice {
   totalAmount: number
   /** 견적서 상태 (대기/승인/거절) */
   status: InvoiceStatus
+  /** 누적 조회수 (Notion에 속성이 없으면 0) */
+  viewCount: number
 }
 
 /**
