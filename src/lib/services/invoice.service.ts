@@ -123,6 +123,24 @@ async function fetchInvoiceItems(
 }
 
 /**
+ * 목록 조회용 견적 항목 조회 (필요한 경우에만)
+ * `총 금액` 속성이 이미 있으면 항목 조회를 건너뛰어 불필요한 Notion API 호출을 줄임
+ * (transformNotionToInvoice는 `총 금액`이 없을 때만 항목 합계로 폴백함)
+ * @param page - 견적서 페이지
+ * @returns Item 페이지 데이터 배열
+ */
+async function fetchInvoiceItemsIfNeeded(
+  page: NotionPage & { properties: InvoicePageProperties }
+): Promise<Array<NotionPage & { properties: ItemPageProperties }>> {
+  if (page.properties['총 금액']?.number != null) {
+    return []
+  }
+
+  const itemIds = page.properties.항목?.relation?.map(r => r.id) || []
+  return fetchInvoiceItems(itemIds)
+}
+
+/**
  * 재시도 로직 구현
  * @param fn - 실행할 비동기 함수
  * @param maxRetries - 최대 재시도 횟수 (기본값: 3)
@@ -233,15 +251,15 @@ export interface InvoiceListResult {
 export async function getInvoicesFromNotion(
   pageSize: number = 10,
   startCursor?: string,
-  sortBy?: 'issue_date' | 'total_amount'
+  sortBy?: 'issue_date' | 'total_amount',
+  sortOrder: 'ascending' | 'descending' = 'descending'
 ): Promise<InvoiceListResult> {
   try {
     // Notion API 페이지 크기 제한 (최대 100)
     const limitedPageSize = Math.min(pageSize, 100)
 
-    // 정렬 속성 매핑
+    // 정렬 속성 매핑 (기본 정렬 기준: 총 금액)
     const sortProperty = sortBy === 'issue_date' ? '발행일' : '총 금액'
-    const sortDirection = 'descending' as const
 
     // v5에서는 data_source_id 필요
     const dataSourceId = await getDataSourceId()
@@ -254,19 +272,18 @@ export async function getInvoicesFromNotion(
       sorts: [
         {
           property: sortProperty,
-          direction: sortDirection,
+          direction: sortOrder,
         },
       ],
     })
 
-    // 병렬 처리로 모든 견적서의 항목 조회
+    // 병렬 처리로 모든 견적서 변환 (총 금액이 이미 있으면 항목 조회 생략)
     const invoices = await Promise.all(
       response.results
         .filter((page): page is NotionPage => 'properties' in page)
         .filter(isInvoicePage)
         .map(async page => {
-          const itemIds = page.properties.항목?.relation?.map(r => r.id) || []
-          const items = await fetchInvoiceItems(itemIds)
+          const items = await fetchInvoiceItemsIfNeeded(page)
           return transformNotionToInvoice(page, items)
         })
     )
@@ -304,7 +321,9 @@ export async function getInvoicesFromNotion(
 export async function searchInvoices(
   filters: InvoiceFilters,
   pageSize: number = 10,
-  startCursor?: string
+  startCursor?: string,
+  sortBy?: 'issue_date' | 'total_amount',
+  sortOrder: 'ascending' | 'descending' = 'descending'
 ): Promise<InvoiceListResult> {
   try {
     // Notion API 페이지 크기 제한 (최대 100)
@@ -376,20 +395,19 @@ export async function searchInvoices(
           : undefined,
       sorts: [
         {
-          property: '발행일',
-          direction: 'descending',
+          property: sortBy === 'issue_date' ? '발행일' : '총 금액',
+          direction: sortOrder,
         },
       ],
     })
 
-    // 병렬 처리로 모든 견적서의 항목 조회
+    // 병렬 처리로 모든 견적서 변환 (총 금액이 이미 있으면 항목 조회 생략)
     const invoices = await Promise.all(
       response.results
         .filter((page): page is NotionPage => 'properties' in page)
         .filter(isInvoicePage)
         .map(async page => {
-          const itemIds = page.properties.항목?.relation?.map(r => r.id) || []
-          const items = await fetchInvoiceItems(itemIds)
+          const items = await fetchInvoiceItemsIfNeeded(page)
           return transformNotionToInvoice(page, items)
         })
     )

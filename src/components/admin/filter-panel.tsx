@@ -75,6 +75,7 @@ export function FilterPanel({
     // 필터 변경 시 1페이지로 리셋
     params.delete('page')
     params.delete('cursor')
+    params.delete('cursors')
 
     router.push(`?${params.toString()}`)
   }
@@ -90,6 +91,7 @@ export function FilterPanel({
     params.delete('dateTo')
     params.delete('page')
     params.delete('cursor')
+    params.delete('cursors')
 
     router.push(`?${params.toString()}`)
   }

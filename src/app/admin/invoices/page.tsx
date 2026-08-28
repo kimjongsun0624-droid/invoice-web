@@ -15,7 +15,9 @@ interface InvoicesPageProps {
   searchParams: Promise<{
     page?: string
     sort?: 'issue_date' | 'total_amount'
+    order?: 'ascending' | 'descending'
     cursor?: string
+    cursors?: string
     query?: string
     status?: InvoiceStatus
     dateFrom?: string
@@ -30,11 +32,13 @@ interface InvoicesPageProps {
 async function InvoiceListContent({
   page,
   sort,
+  order,
   cursor,
   filters,
 }: {
   page: number
-  sort?: 'issue_date' | 'total_amount'
+  sort: 'issue_date' | 'total_amount'
+  order: 'ascending' | 'descending'
   cursor?: string
   filters: InvoiceFilters
 }) {
@@ -47,8 +51,8 @@ async function InvoiceListContent({
   )
 
   const { invoices, nextCursor, hasMore } = hasFilters
-    ? await searchInvoices(filters, 10, cursor)
-    : await getInvoicesFromNotion(10, cursor, sort)
+    ? await searchInvoices(filters, 10, cursor, sort, order)
+    : await getInvoicesFromNotion(10, cursor, sort, order)
 
   if (invoices.length === 0) {
     return (
@@ -69,7 +73,12 @@ async function InvoiceListContent({
 
   return (
     <div className="space-y-4">
-      <InvoiceTable invoices={invoices} currentSort={sort} />
+      <InvoiceTable
+        invoices={invoices}
+        currentSort={sort}
+        currentOrder={order}
+        query={filters.query}
+      />
       <Pagination
         currentPage={page}
         hasNext={hasMore}
@@ -107,7 +116,9 @@ export default async function InvoicesPage({
 }: InvoicesPageProps) {
   const params = await searchParams
   const page = Number(params.page) || 1
-  const sort = params.sort
+  // 기본 정렬 기준: 총 금액 (내림차순) — SortButton의 활성 상태 표시와 일치시킴
+  const sort = params.sort || 'total_amount'
+  const order = params.order || 'descending'
   const cursor = params.cursor
 
   // 검색 및 필터 파라미터 추출
@@ -143,6 +154,7 @@ export default async function InvoicesPage({
         <InvoiceListContent
           page={page}
           sort={sort}
+          order={order}
           cursor={cursor}
           filters={filters}
         />

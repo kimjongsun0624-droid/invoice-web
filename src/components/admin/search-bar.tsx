@@ -24,6 +24,13 @@ export function SearchBar({ defaultValue = '' }: SearchBarProps) {
   const searchParams = useSearchParams()
 
   useEffect(() => {
+    const currentQuery = searchParams.get('query') ?? ''
+
+    // 검색어가 실제로 바뀐 경우에만 URL을 갱신 (마운트 시 불필요한 리셋 방지)
+    if (debouncedQuery === currentQuery) {
+      return
+    }
+
     const params = new URLSearchParams(searchParams)
 
     if (debouncedQuery) {
@@ -32,9 +39,10 @@ export function SearchBar({ defaultValue = '' }: SearchBarProps) {
       params.delete('query')
     }
 
-    // 검색 시 1페이지로 리셋
+    // 검색어 변경 시에만 1페이지로 리셋
     params.delete('page')
     params.delete('cursor')
+    params.delete('cursors')
 
     router.push(`?${params.toString()}`)
   }, [debouncedQuery, router, searchParams])

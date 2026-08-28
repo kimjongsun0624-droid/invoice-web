@@ -11,15 +11,19 @@ import { Button } from '@/components/ui/button'
 import type { Invoice, InvoiceStatus } from '@/types/invoice'
 import { formatCurrency, formatDate } from '@/lib/format'
 import Link from 'next/link'
-import { ExternalLink, ArrowUpDown } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { generateInvoiceUrl } from '@/lib/utils/link-generator'
 import { LinkDisplay } from '@/components/admin/link-display'
 import { CopyButton } from '@/components/admin/copy-button'
 import { ShareButton } from '@/components/admin/share-button'
+import { SortButton } from '@/components/admin/sort-button'
+import { HighlightText } from '@/components/admin/highlight-text'
 
 interface InvoiceTableProps {
   invoices: Invoice[]
   currentSort?: 'issue_date' | 'total_amount'
+  currentOrder?: 'ascending' | 'descending'
+  query?: string
 }
 
 /**
@@ -35,37 +39,15 @@ const statusConfig: Record<
 }
 
 /**
- * 정렬 버튼 컴포넌트
- */
-function SortButton({
-  field,
-  currentSort,
-  children,
-}: {
-  field: 'issue_date' | 'total_amount'
-  currentSort?: string
-  children: React.ReactNode
-}) {
-  const isActive = currentSort === field
-
-  return (
-    <Link
-      href={`?sort=${field}`}
-      className="hover:text-foreground flex items-center gap-2 transition-colors"
-    >
-      {children}
-      <ArrowUpDown
-        className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
-      />
-    </Link>
-  )
-}
-
-/**
  * 견적서 테이블 컴포넌트
  * shadcn/ui Table로 견적서 목록을 테이블 형태로 표시
  */
-export function InvoiceTable({ invoices, currentSort }: InvoiceTableProps) {
+export function InvoiceTable({
+  invoices,
+  currentSort,
+  currentOrder,
+  query,
+}: InvoiceTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -74,13 +56,21 @@ export function InvoiceTable({ invoices, currentSort }: InvoiceTableProps) {
             <TableHead className="w-[140px]">견적서 번호</TableHead>
             <TableHead>클라이언트명</TableHead>
             <TableHead className="w-[140px]">
-              <SortButton field="issue_date" currentSort={currentSort}>
+              <SortButton
+                field="issue_date"
+                currentSort={currentSort}
+                currentOrder={currentOrder}
+              >
                 발행일
               </SortButton>
             </TableHead>
             <TableHead className="w-[140px]">유효기간</TableHead>
             <TableHead className="w-[140px] text-right">
-              <SortButton field="total_amount" currentSort={currentSort}>
+              <SortButton
+                field="total_amount"
+                currentSort={currentSort}
+                currentOrder={currentOrder}
+              >
                 총액
               </SortButton>
             </TableHead>
@@ -93,9 +83,11 @@ export function InvoiceTable({ invoices, currentSort }: InvoiceTableProps) {
           {invoices.map(invoice => (
             <TableRow key={invoice.id}>
               <TableCell className="font-medium">
-                {invoice.invoiceNumber}
+                <HighlightText text={invoice.invoiceNumber} query={query} />
               </TableCell>
-              <TableCell>{invoice.clientName}</TableCell>
+              <TableCell>
+                <HighlightText text={invoice.clientName} query={query} />
+              </TableCell>
               <TableCell>{formatDate(invoice.issueDate, 'short')}</TableCell>
               <TableCell>{formatDate(invoice.validUntil, 'short')}</TableCell>
               <TableCell className="text-right font-medium">

@@ -25,19 +25,23 @@ export function Pagination({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  /**
-   * 페이지 이동 핸들러
-   * @param page - 이동할 페이지 번호
-   * @param cursor - Notion API 커서 (선택사항)
-   */
-  function goToPage(page: number, cursor?: string) {
+  // Notion 커서 페이지네이션은 앞으로만 이동 가능하므로,
+  // 방문했던 커서들을 URL의 `cursors` 파라미터에 스택으로 기록해 "이전"을 지원함.
+  // cursors[i] = (i+2)번째 페이지를 조회할 때 사용한 start_cursor
+  const cursorHistory =
+    searchParams.get('cursors')?.split(',').filter(Boolean) ?? []
+
+  function navigate(page: number, cursors: string[]) {
     const params = new URLSearchParams(searchParams)
     params.set('page', String(page))
 
+    const cursor = cursors[cursors.length - 1]
     if (cursor) {
       params.set('cursor', cursor)
+      params.set('cursors', cursors.join(','))
     } else {
       params.delete('cursor')
+      params.delete('cursors')
     }
 
     router.push(`?${params.toString()}`)
@@ -45,19 +49,19 @@ export function Pagination({
 
   /**
    * 이전 페이지로 이동
-   * 커서를 제거하고 페이지 번호만 감소
+   * 커서 히스토리에서 마지막 항목을 제거하고, 남은 히스토리의 마지막 커서로 조회
    */
   function handlePrevious() {
-    goToPage(currentPage - 1)
+    navigate(currentPage - 1, cursorHistory.slice(0, -1))
   }
 
   /**
    * 다음 페이지로 이동
-   * Notion API의 next_cursor를 사용
+   * Notion API의 next_cursor를 커서 히스토리에 추가
    */
   function handleNext() {
     if (nextCursor) {
-      goToPage(currentPage + 1, nextCursor)
+      navigate(currentPage + 1, [...cursorHistory, nextCursor])
     }
   }
 
