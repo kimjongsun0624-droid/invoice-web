@@ -36,9 +36,14 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin')) {
     // 세션 확인
     const token = request.cookies.get('admin_session')?.value
+    const loginUrl = new URL('/admin-login', request.url)
+    loginUrl.searchParams.set(
+      'next',
+      request.nextUrl.pathname + request.nextUrl.search
+    )
 
     if (!token) {
-      return NextResponse.redirect(new URL('/admin-login', request.url))
+      return NextResponse.redirect(loginUrl)
     }
 
     try {
@@ -47,7 +52,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next()
     } catch {
       // JWT 검증 실패 (만료, 변조 등) - 로그인 페이지로 리다이렉트
-      return NextResponse.redirect(new URL('/admin-login', request.url))
+      return NextResponse.redirect(loginUrl)
     }
   }
 
