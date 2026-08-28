@@ -90,11 +90,50 @@
  */
 
 /**
+ * 테스트 시나리오 7: 검색 + 상태 필터 + 정렬 조합 (Task 022 통합 테스트)
+ *
+ * 1. 검색창에 클라이언트명 일부 입력 → URL에 `?query=` 반영 확인
+ * 2. 필터 패널을 열어 상태를 "대기"로 선택 후 "필터 적용" → URL에 `status=pending` 추가되고
+ *    `query`는 유지되는지 확인
+ * 3. "발행일" 정렬 헤더 클릭 → URL에 `sort=issue_date&order=...`가 추가되고
+ *    `query`/`status`는 그대로 유지되는지 확인
+ * 4. 상태 필터를 "승인"으로 바꿔 실제로 결과가 필터링되는지 확인
+ *    (검증 시점에 "대기" 상태인 견적서만 있다면 "검색 결과가 없습니다"가 나와야 정상)
+ *
+ * 검증 기준:
+ * - ✅ 검색/필터/정렬이 서로의 URL 파라미터를 지우지 않고 조합됨
+ * - ✅ 상태 필터가 실제로 Notion 쿼리에 반영되어 결과가 달라짐
+ *
+ * ⚠️ 알려진 이슈(2026-08-28 수정됨): Notion DB의 `상태` 속성이 Status 타입인데
+ * 코드가 Select 타입으로 가정하고 있어 상태 필터 적용 시
+ * `validation_error`가 발생하고, 상태 배지도 항상 "대기"로만 표시되던 버그가 있었음.
+ * `src/types/notion.ts`, `src/lib/utils/notion-parser.ts`,
+ * `src/lib/services/invoice.service.ts`를 Status 타입 기준으로 수정 완료.
+ * Notion DB를 새로 만드는 경우 `상태` 속성이 반드시 **Status 타입**이어야 함.
+ */
+
+/**
+ * 테스트 시나리오 8: 모바일 뷰포트 관리자 네비게이션 (Task 022/023)
+ *
+ * 1. browser_resize로 375×700 등 좁은 뷰포트로 전환
+ * 2. 관리자 페이지 접속 → 고정 사이드바 대신 좌측 상단 햄버거(메뉴) 버튼이 보이는지 확인
+ * 3. 햄버거 버튼 클릭 → Sheet(슬라이드 메뉴)가 열리고 "대시보드"/"견적서 목록" 링크가
+ *    글자 쪼개짐 없이 정상 표시되는지 확인
+ * 4. 링크 클릭 시 해당 페이지로 이동하며 메뉴가 자동으로 닫히는지 확인
+ * 5. 데스크톱 크기(1280px 등)로 되돌렸을 때 햄버거는 숨겨지고 고정 사이드바가 다시 보이는지 확인
+ *
+ * 검증 기준:
+ * - ✅ 375px 뷰폭에서 사이드바 텍스트가 세로로 쪼개지지 않음
+ * - ✅ 모바일 메뉴(Sheet)가 열리고 닫힘
+ * - ✅ md 이상에서는 기존 고정 사이드바 레이아웃 유지
+ */
+
+/**
  * 실행 방법:
  *
  * 1. 개발 서버 시작: `npm run dev`
  * 2. Claude Code에서 Playwright MCP 도구 사용 (browser_navigate, browser_snapshot,
- *    browser_click, browser_type, browser_wait_for, browser_console_messages)
+ *    browser_click, browser_type, browser_wait_for, browser_console_messages, browser_resize)
  * 3. 각 시나리오를 순서대로 실행하여 검증
  * 4. 결과 기록: 통과/실패 여부, 발견된 이슈
  */
