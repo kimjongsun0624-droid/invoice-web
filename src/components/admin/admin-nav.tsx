@@ -12,8 +12,9 @@ import { Home, FileText } from 'lucide-react'
 
 /**
  * 네비게이션 항목 정의
+ * 데스크톱 사이드바와 모바일 시트(MobileNav)가 함께 사용함
  */
-const navItems = [
+export const navItems = [
   {
     href: '/admin',
     label: '대시보드',
@@ -33,7 +34,7 @@ export function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="bg-muted/10 min-h-[calc(100vh-4rem)] w-64 shrink-0 border-r p-4">
+    <nav className="bg-muted/10 hidden min-h-[calc(100vh-4rem)] w-64 shrink-0 border-r p-4 md:block">
       <ul className="space-y-2">
         {navItems.map(item => {
           const Icon = item.icon
