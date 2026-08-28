@@ -48,10 +48,10 @@ export interface InvoicePageProperties {
     type: 'number'
     number: number | null
   }
-  /** 상태 (Select 속성: 대기/승인/거절) */
+  /** 상태 (Status 속성: 대기/승인/거절) */
   상태: {
-    type: 'select'
-    select: { name: string } | null
+    type: 'status'
+    status: { name: string } | null
   }
   /** 항목 (Relation 속성 → Items) */
   항목: {

@@ -33,7 +33,7 @@ export function transformNotionToInvoice(
     props.유효기간?.date?.start || getDefaultValidUntil(issueDate)
   const totalAmount =
     props['총 금액']?.number || calculateTotalFromItems(itemPages)
-  const status = mapKoreanStatus(props.상태?.select?.name)
+  const status = mapKoreanStatus(props.상태?.status?.name)
   const viewCount = props.조회수?.number ?? 0
 
   // 항목 변환

@@ -360,7 +360,7 @@ export async function searchInvoices(
 
       notionFilters.push({
         property: '상태',
-        select: { equals: statusMap[filters.status] },
+        status: { equals: statusMap[filters.status] },
       })
     }
 
