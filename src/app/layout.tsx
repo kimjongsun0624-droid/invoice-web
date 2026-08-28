@@ -33,12 +33,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning className={notoSansKR.variable}>
       <body className={`${geistMono.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <Toaster />
         </ThemeProvider>

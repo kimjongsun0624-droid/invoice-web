@@ -207,4 +207,15 @@
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
   }
+
+  /* 다크모드 전환 시 색상이 부드럽게 바뀌도록 처리 (레이아웃에 영향 없는 속성만) */
+  @media (prefers-reduced-motion: no-preference) {
+    *,
+    *::before,
+    *::after {
+      transition-property: background-color, border-color, color, fill, stroke;
+      transition-duration: 200ms;
+      transition-timing-function: ease;
+    }
+  }
 }
