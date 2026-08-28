@@ -215,7 +215,7 @@ export default async function InvoicePage({ params }: { params: { id: string } }
 
 ### 견적서 목록 조회
 
-#### `getInvoicesFromNotion(pageSize?: number, startCursor?: string, sortBy?: 'issue_date' | 'total_amount'): Promise<InvoiceListResult>`
+#### `getInvoicesFromNotion(pageSize?: number, startCursor?: string, sortBy?: 'issue_date' | 'total_amount', sortOrder?: 'ascending' | 'descending'): Promise<InvoiceListResult>`
 
 Notion 데이터베이스에서 견적서 목록 조회
 
@@ -223,7 +223,8 @@ Notion 데이터베이스에서 견적서 목록 조회
 
 - `pageSize`: 페이지당 항목 수 (기본: 10, 최대: 100)
 - `startCursor`: 페이지네이션 커서
-- `sortBy`: 정렬 기준
+- `sortBy`: 정렬 기준 (기본: `total_amount`)
+- `sortOrder`: 정렬 방향 (기본: `descending`)
 
 **반환값**:
 
@@ -243,7 +244,8 @@ import { getInvoicesFromNotion } from '@/lib/services/invoice.service'
 const { invoices, nextCursor, hasMore } = await getInvoicesFromNotion(
   10,
   undefined,
-  'issue_date'
+  'issue_date',
+  'ascending'
 )
 ```
 
@@ -251,9 +253,9 @@ const { invoices, nextCursor, hasMore } = await getInvoicesFromNotion(
 
 ### 견적서 검색
 
-#### `searchInvoices(filters: InvoiceFilters, pageSize?: number, startCursor?: string): Promise<InvoiceListResult>`
+#### `searchInvoices(filters: InvoiceFilters, pageSize?: number, startCursor?: string, sortBy?: 'issue_date' | 'total_amount', sortOrder?: 'ascending' | 'descending'): Promise<InvoiceListResult>`
 
-필터 조건으로 견적서 검색
+필터 조건으로 견적서 검색. 정렬 파라미터는 `getInvoicesFromNotion`과 동일하게 동작하며, 필터가 걸려 있어도 정렬이 적용됨.
 
 **필터 타입**:
 
@@ -266,17 +268,43 @@ interface InvoiceFilters {
 }
 ```
 
+**주의**: Notion DB의 `상태` 속성은 **Status 타입**이어야 함 (구버전 Select 타입이 아님). Select 타입으로 만들어져 있으면 이 필터가 `validation_error`로 실패함.
+
 **사용 예시**:
 
 ```typescript
 import { searchInvoices } from '@/lib/services/invoice.service'
 
-const { invoices } = await searchInvoices({
-  query: 'ABC 회사',
-  status: 'pending',
-  dateFrom: '2025-01-01',
-  dateTo: '2025-12-31',
-})
+const { invoices } = await searchInvoices(
+  {
+    query: 'ABC 회사',
+    status: 'pending',
+    dateFrom: '2025-01-01',
+    dateTo: '2025-12-31',
+  },
+  10,
+  undefined,
+  'issue_date',
+  'descending'
+)
+```
+
+---
+
+### 조회수 증가
+
+#### `incrementViewCount(pageId: string): Promise<void>`
+
+견적서 조회 시 Notion `조회수`(Number) 속성을 +1. 속성이 없으면 조용히 무시됨(에러를 던지지 않고 `logger.warn`만 남김). 캐시된 값이 아닌 최신 값을 다시 읽어 증가시키므로 60초 캐시 윈도우 안에서도 카운트가 누락되지 않음. 동시 조회 시 read-modify-write 경쟁으로 일부 카운트가 누락될 수 있음(원자적 증가 아님).
+
+**사용 예시**:
+
+```typescript
+import { incrementViewCount } from '@/lib/services/invoice.service'
+import { after } from 'next/server'
+
+// 응답을 막지 않도록 반드시 after()로 백그라운드 실행
+after(() => incrementViewCount(invoiceId))
 ```
 
 ---
@@ -331,7 +359,7 @@ import { CopyButton } from '@/components/admin/copy-button'
 
 ### ShareButton
 
-링크 공유 버튼 (Client Component)
+링크 공유 버튼 (Client Component). `navigator.share`를 지원하는 브라우저에서는 "공유하기(카카오톡 등)" 항목이 드롭다운 최상단에 추가로 표시됨.
 
 **Props**:
 
@@ -361,17 +389,16 @@ import { ShareButton } from '@/components/admin/share-button'
 
 ### Rate Limiting
 
-관리자 페이지 접근 제한:
-
-- **로그인 시도**: 5회/IP
-- **실패 시 잠금**: 60초
-- **API 요청**: Notion API 제한 준수
+- **로그인 시도**: IP당 5회 / 5분 (`src/app/(auth)/admin-login/actions.ts`의 `LOGIN_RATE_LIMIT`)
+- **API 요청**(`/api/*`): IP당 10회 / 분 (`src/middleware.ts`)
+- **Notion API 호출**: Notion 자체 제한(3 requests/second) 준수, 지수 백오프 재시도
 
 ### 인증
 
 - **세션 방식**: JWT (HttpOnly Cookie)
-- **세션 만료**: 브라우저 닫기 시
-- **CSRF 방지**: SameSite Cookie
+- **세션 만료**: 7일 (발급 시점 기준, 브라우저를 닫아도 유지됨)
+- **CSRF 방지**: SameSite=Lax Cookie
+- **로그인 성공 후 리다이렉트**: 미인증 접근 시 `next` 쿼리 파라미터로 원래 요청 경로를 기억했다가 로그인 후 복귀
 
 ---
 
